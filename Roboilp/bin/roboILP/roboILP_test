@@ -1,0 +1,1 @@
+java -Xms64m -Xmx512m -classpath ${CLASSPATH}:/users/awai/bin/interprolog212a/unixScripts/interprolog.jar -Djava.library.path=${XSB_BIN_DIRECTORY} roboILP.RoboILP -team $1 -theory $2 -modelFile $3 -mode 2

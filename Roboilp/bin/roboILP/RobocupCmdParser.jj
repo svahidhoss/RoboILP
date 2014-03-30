@@ -1,0 +1,515 @@
+options {
+  STATIC = false;
+  LOOKAHEAD = 2;
+//  FORCE_LA_CHECK = false;
+}
+PARSER_BEGIN(RobocupCmdParser)
+  package roboILP;
+  import java.io.*;
+
+  public class RobocupCmdParser implements ICmdParser {
+
+    RobocupController controller;
+
+    public void parseSeeCommand (String cmd, Controller controller)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = (RobocupController)controller;
+      startSeeCommand();
+    }
+    public void parseHearCommand (String cmd, Controller controller)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = (RobocupController)controller;
+      startHearCommand();
+    }
+    public void parseInitCommand (String cmd, Controller controller)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = (RobocupController)controller;
+      startInitCommand();
+    }
+    public void parseActionCommand (String cmd, Controller controller)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = (RobocupController)controller;
+      startActionCommand();
+    }
+    public void parseErrorCommand (String cmd)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = null;
+//      startErrorCommand();
+    }
+    public void parseSenseBodyCommand (String cmd, Controller controller)
+        throws ParseException{
+      ReInit(new StringReader(cmd));
+      this.controller = (RobocupController)controller;
+//      startSenseBodyCommand();
+    }
+  }
+PARSER_END(RobocupCmdParser)
+
+SKIP: {
+  "\t"|"\n"|"\r"
+}
+TOKEN :
+{
+  < BALL: "b"|"B"|"ball"|"Ball" >|
+  < FLAG: ("f"|"F"|"flag"|"Flag")(<SEP>("p"|"g"|"t"|"b"|"l"|"c"|"r")(<SEP>("p"|"g"|"t"|"b"|"l"|"c"|"r"|"0")(<SEP>("t"|"c"|"b"|"10"|"20"|"30"|"40"|"50"))?)?)? >|
+  < PLAYER: "p"|"P"|"player"|"Player">|
+  < LINE: ("l"|"line"|"Line")<SEP>("t"|"b"|"l"|"r")>|
+  < GOAL: ("g"|"G"|"goal")<SEP>("l"|"r")>|
+  < UNK_GOAL: "Goal" >|
+  < REFEREE: "referee"|"Referee">|
+  < SELF: "self">|
+  < VIEW_MODE: "view_mode">|
+  < HIGH: "high">|
+  < LOW: "low">|
+  < WIDE: "wide">|
+  < NARROW: "narrow">|
+  < NORMAL: "normal">|
+  < STAMINA: "stamina">|
+  < SPEED: "speed">|
+  < HEAD_ANGLE: "head_angle">|
+  < KICK: "kick">|
+  < DASH: "dash">|
+  < TURN: "turn">|
+  < SAY: "say">|
+  < TURN_NECK: "turn_neck">|
+  < BEFORE_KICK_OFF: "before_kick_off">|
+  < TIME_OVER: "time_over">|
+  < PLAY_ON: "play_on">|
+  < DROP_BALL: "drop_ball">|
+  < KICK_OFF_L: "kick_off_l">|
+  < KICK_OFF_R: "kick_off_r">|
+  < KICK_IN_L: "kick_in_l">|
+  < KICK_IN_R: "kick_in_r">|
+  < FREE_KICK_R: "free_kick_r">|
+  < FREE_KICK_L: "free_kick_l">|
+  < FREE_KICK_FAULT_R: "free_kick_fault_r">|
+  < FREE_KICK_FAULT_L: "free_kick_fault_l">|
+  < CORNER_KICK_R: "corner_kick_r">|
+  < CORNER_KICK_L: "corner_kick_l">|
+  < GOAL_KICK_R: "goal_kick_r">|
+  < GOAL_KICK_L: "goal_kick_l">|
+  < GOAL_R: "goal_r_"(["0"-"9"])+>|
+  < GOAL_L: "goal_l_"(["0"-"9"])+>|
+  < FOUL_R: "foul_r">|
+  < FOUL_L: "foul_l">|
+  < OFFSIDE_R: "offside_r">|
+  < OFFSIDE_L: "offside_l">|
+  < HALF_TIME: "half_time">|
+  < TIME_UP: "time_up">|
+  < TIME_UP_WITHOUT_A_TEAM: "time_up_without_a_team">|
+  < TIME_EXTENDED: "time_extended">|
+  < INIT: ("l"|"r")<SEP><NUM> >|
+  < OB: "(">|
+  < CB: ")">|
+  < SEP: " ">|
+  < NAN: "nan">|
+  < NAM: (<QUOTE>)?["a"-"z","A"-"Z","_"] ( ["a"-"z","A"-"Z","_","0"-"9"] )* (<QUOTE>)? >|
+  < NUM: ( ["0"-"9"]|"."|"-" )+ >|
+  < #PARAM_1A: <SEP><ALPH> >|
+  < PARAM_1A_1N: <SEP><ALPH><SEP><NUM> >|
+  < PARAM_2A: <SEP><ALPH><SEP><ALPH> >|
+  < PARAM_2A_1N: <SEP><ALPH><SEP><ALPH><SEP><NUM> >|
+  < PARAM_3A: <SEP><ALPH><SEP><ALPH><SEP><ALPH> >|
+  < #ALPH:  ["a"-"z"] >|
+  < QUOTE: "\"">|
+  < EMPTY: []>
+}
+
+void startSeeCommand() :
+  {ObjectInfo name=null; Token time=null;} {
+    time=<NUM>[<SEP>(<OB>name=objInfo(time)<CB>[<SEP>])+] {
+    }
+  }
+ObjectInfo objInfo(Token time) :
+  {ObjectInfo name; Token p1=null; Token p2=null; Token p3=null; Token p4=null; Token p5=null; Token p6=null;   } {
+    <OB> name=objName()[<SEP>]<CB>[<SEP>](p1=<NUM>|<NAN>)[<SEP>]
+        [p2=<NUM>[<SEP>][p3=<NUM> <SEP> p4=<NUM>[<SEP>][p5=<NUM> <SEP> p6=<NUM>[<SEP>]]]]{
+      Double dDir;
+      Double dDist;
+      Double dDistChg;
+      Double dDirChg;
+      Double dBodyFaceDir;
+      Double dHeadFaceDir;
+      if (p1 != null) {
+        if (p2 == null) {
+          dDir = new Double(p1.toString());
+	  name.setDirection(dDir.doubleValue());
+        }
+        else {
+          dDist = new Double(p1.toString());
+          dDir = new Double(p2.toString());
+	  name.setDistance(dDist.doubleValue());
+	  name.setDirection(dDir.doubleValue());
+	  if (p3 != null) {
+	    dDistChg = new Double(p3.toString());
+	    dDirChg = new Double(p4.toString());
+	    name.setDistChg(dDistChg.doubleValue());
+	    name.setDirChg(dDirChg.doubleValue());
+	    if (p5 != null) {
+	      dBodyFaceDir = new Double(p5.toString());
+	      dHeadFaceDir = new Double(p6.toString());
+	      ((RobocupPlayerInfo)name).m_bodyFaceDir = dBodyFaceDir.doubleValue();
+	      ((RobocupPlayerInfo)name).m_headFaceDir = dHeadFaceDir.doubleValue();
+	    }
+	  }
+        }
+
+        Integer iNum = new Integer(time.toString());
+        name.m_time = iNum.intValue();
+//	name.print();
+        controller.addObject(name);
+
+/*
+        if (player.isTeamEast()) {
+          name.infoSeeFromEast(controller, dDist.doubleValue(), dDir.doubleValue());
+        }
+        else {
+          name.infoSeeFromWest(controller, dDist.doubleValue(), dDir.doubleValue());
+        }
+*/
+      }
+
+      return name;
+    }
+  }
+ObjectInfo objName() :
+  {Token name; Token num; ObjectInfo objName=null; 
+   Token player=null; Token ball=null; Token flag=null; Token line=null; Token goal=null;} {
+    player=<PLAYER>[[<SEP>]objName=objNamePlayer()] {
+      char firstChar = player.image.charAt(0);
+      if (objName==null) {
+        objName = new RobocupPlayerInfo("", -1);
+      }
+      objName.m_inViewConeP = (firstChar == 'p');
+      return objName;
+    } |
+    ball=<BALL> {
+      char firstChar = ball.image.charAt(0);
+      objName = new RobocupBallInfo();
+      objName.m_inViewConeP = (firstChar == 'b');
+      return objName;
+    } |
+    flag=<FLAG> {
+      String str[] 	= flag.image.split(" ");
+//      System.out.println("flag found: " + flag.image);
+
+      boolean inView	= (flag.image.charAt(0) == 'f');
+      if(str.length == 2) {
+        char pos1 	= str[1].charAt(0);
+        return new RobocupFlagInfo(' ',pos1,' ',0,inView);
+      } else
+      if(str.length == 3) {
+        char pos1 	= str[1].charAt(0);
+        char pos2 	= str[2].charAt(0);
+        return new RobocupFlagInfo(' ',pos1,pos2,0,inView);
+      } else
+      if(str.length == 4) {
+        if(str[3].length() == 1) {
+          char type 	= str[1].charAt(0);
+          char pos1 	= str[2].charAt(0);
+          char pos2 	= str[3].charAt(0);
+          return new RobocupFlagInfo(type,pos1,pos2,0,inView);
+	} else {
+          char pos1 	= str[1].charAt(0);
+          char pos2 	= str[2].charAt(0);
+          int  iNum  	= Integer.parseInt(str[3]);
+          return new RobocupFlagInfo(' ',pos1,pos2,iNum,inView);
+	}
+      } else return new RobocupFlagInfo();
+    } |
+    line=<LINE> {
+      String[] str = line.image.split(" ");
+      char firstChar = str[0].charAt(0);
+      char type = str[1].charAt(0);
+      objName = new RobocupLineInfo(type);
+      objName.m_inViewConeP = (firstChar == 'l');
+      return objName;
+    } |
+    goal=<GOAL> {
+      String[] str = goal.image.split(" ");
+      char firstChar = str[0].charAt(0);
+      char side = str[1].charAt(0);
+      objName = new RobocupGoalInfo(side);
+      objName.m_inViewConeP = true;
+      return objName;
+    } |
+    goal=<UNK_GOAL> {
+      System.out.println("Unknown Goal found");
+      objName = new RobocupGoalInfo();
+      objName.m_inViewConeP = false;
+      return objName;
+    }
+  }
+ObjectInfo objNamePlayer() :
+  {Token name=null; Token num=null; ObjectInfo objName=null; Token goalie=null;} {
+    name=<NAM>[<SEP>num=<NUM>][<SEP>goalie=<NAM>] {
+      Integer iNum;
+      if (num==null) iNum = new Integer(-1);
+      else  iNum = new Integer(num.toString());
+
+      // TODO: ignore goalie for now
+      return new RobocupPlayerInfo(name.toString(), iNum.intValue());
+    }
+  }
+
+void startInitCommand() :
+  {Token name=null;} {
+   (
+    name=<INIT> { 
+      String str[] = name.image.split(" ");
+      char side = name.image.charAt(0);
+      int  num  = Integer.parseInt(str[1]);
+
+      RoboILP.println(3,"startInitCommand: " + side + ", " + num);
+      controller.setSide(side);
+      controller.setPlayerNum(num);
+    }
+
+/*
+    <SEP>playMode=playMode(){
+      controller.infoHearPlayMode(playMode);
+    }
+*/
+   )
+  }
+
+
+void startActionCommand() :
+  {Token p1=null; Token p2=null; Double dNum1, dNum2;} {
+   (
+    p1=<NUM>[<SEP>p2=<NUM>] {
+
+      dNum1 = new Double(p1.toString());
+      controller.setActionP1(dNum1.doubleValue());
+      if (p2!=null) {
+        dNum2 = new Double(p2.toString());
+        controller.setActionP2(dNum2.doubleValue());
+      }
+    }
+   )
+  }
+
+
+void startHearCommand() :
+  {Token num;Token msg;} {
+    <NUM><SEP>(
+      <SELF>|
+      <REFEREE><SEP>hearReferee()
+//      |
+//      num=<NUM><SEP>msg=<NAM>{
+//        Double dNum = new Double(num.image);
+//        controller.infoHear(dNum.doubleValue(), msg.image);
+//      }
+    )
+  }
+void hearReferee() :
+  {int playMode=-1; int refereeMessage=-1;}{
+    playMode=playMode(){
+      RoboILP.println(3,"hearRefere: playerMode");
+      controller.infoHearPlayMode(playMode);
+    }|
+    refereeMessage=refereeMessage(){
+      RoboILP.println(3,"hearRefere: refereeMessage");
+      controller.infoHearReferee(refereeMessage);
+    }
+  }
+int playMode() :
+  {}{
+     <BEFORE_KICK_OFF>{
+      return RobocupController.PLAY_MODE_BEFORE_KICK_OFF;
+    }|
+    <TIME_OVER>{
+      return RobocupController.PLAY_MODE_TIME_OVER;
+    }|
+    <PLAY_ON>{
+      return RobocupController.PLAY_MODE_PLAY_ON;
+    }|
+    <KICK_OFF_L>{
+      if (controller.getSide() == 'r')
+        return RobocupController.PLAY_MODE_KICK_OFF_OTHER;
+      else
+        return RobocupController.PLAY_MODE_KICK_OFF_OWN;
+    }|
+    <KICK_OFF_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_KICK_OFF_OTHER;
+      else
+        return RobocupController.PLAY_MODE_KICK_OFF_OWN;
+    }|
+    <KICK_IN_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_KICK_IN_OTHER;
+      else
+        return RobocupController.PLAY_MODE_KICK_IN_OWN;
+    }|
+    <KICK_IN_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_KICK_IN_OTHER;
+      else
+        return RobocupController.PLAY_MODE_KICK_IN_OWN;
+    }|
+    <FREE_KICK_FAULT_R>{
+      RoboILP.println(3,"playMode: free_kick_fault_r; side: " + controller.getSide());
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_FREE_KICK_FAULT_OTHER;
+      else
+        return RobocupController.PLAY_MODE_FREE_KICK_FAULT_OWN;
+    }|
+    <FREE_KICK_FAULT_L>{
+      RoboILP.println(3,"playMode: free_kick_fault_l; side: " + controller.getSide());
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_FREE_KICK_FAULT_OTHER;
+      else
+        return RobocupController.PLAY_MODE_FREE_KICK_FAULT_OWN;
+    }|
+    <FREE_KICK_R>{
+      RoboILP.println(3,"playMode: free_kick_r; side: " + controller.getSide());
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_FREE_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_FREE_KICK_OWN;
+    }|
+    <FREE_KICK_L>{
+      RoboILP.println(3,"playMode: free_kick_l; side: " + controller.getSide());
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_FREE_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_FREE_KICK_OWN;
+    }|
+    <CORNER_KICK_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_CORNER_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_CORNER_KICK_OWN;
+    }|
+    <CORNER_KICK_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_CORNER_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_CORNER_KICK_OWN;
+    }|
+    <GOAL_KICK_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_GOAL_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_GOAL_KICK_OWN;
+    }|
+    <GOAL_KICK_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_GOAL_KICK_OTHER;
+      else
+        return RobocupController.PLAY_MODE_GOAL_KICK_OWN;
+    }|
+    <GOAL_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.PLAY_MODE_GOAL_OTHER;
+      else
+        return RobocupController.PLAY_MODE_GOAL_OWN;
+    }|
+    <GOAL_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.PLAY_MODE_GOAL_OTHER;
+      else
+        return RobocupController.PLAY_MODE_GOAL_OWN;
+    }
+  }
+int refereeMessage() :
+  {}{
+    <OFFSIDE_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.REFREE_MESSAGE_OFFSIDE_OTHER;
+      else
+        return RobocupController.REFREE_MESSAGE_OFFSIDE_OWN;
+    }|
+    <OFFSIDE_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.REFREE_MESSAGE_OFFSIDE_OTHER;
+      else
+        return RobocupController.REFREE_MESSAGE_OFFSIDE_OWN;
+    }|
+    <FOUL_R>{
+      if (controller.getSide() != 'r') 
+        return RobocupController.REFREE_MESSAGE_FOUL_OTHER;
+      else
+        return RobocupController.REFREE_MESSAGE_FOUL_OWN;
+    }|
+    <FOUL_L>{
+      if (controller.getSide() == 'r') 
+        return RobocupController.REFREE_MESSAGE_FOUL_OTHER;
+      else
+        return RobocupController.REFREE_MESSAGE_FOUL_OWN;
+    }|
+    <HALF_TIME>{
+        return RobocupController.REFREE_MESSAGE_HALF_TIME;
+    }|
+    <DROP_BALL>{
+        return RobocupController.REFREE_MESSAGE_DROP_BALL;
+    }|
+    <TIME_UP>{
+        return RobocupController.REFREE_MESSAGE_TIME_UP;
+    }|
+    <TIME_UP_WITHOUT_A_TEAM>{
+        return RobocupController.REFREE_MESSAGE_TIME_UP_WITHOUT_A_TEAM;
+    }|
+    <TIME_EXTENDED>{
+        return RobocupController.REFREE_MESSAGE_TIME_EXTENDED;
+    }
+  }
+
+/*
+void startErrorCommand() :
+  {Token err;} {
+    err=<NAM> {
+      player.handleError(err.image);
+    }
+  }
+void startSenseBodyCommand() : {
+  Token viewModeQual=null;Token viewModeAngle=null;
+  Token stamina=null; Token speed=null; Token headAngle=null;
+  Token kick=null; Token dash=null; Token turn=null; Token say=null;
+  Token turnNeck=null;
+  } {
+    <NUM><SEP>
+    <OB><VIEW_MODE><SEP>
+      (viewModeQual=<HIGH>|viewModeQual=<LOW>)<SEP>
+      (viewModeAngle=<WIDE>|viewModeAngle=<NARROW>|viewModeAngle=<NORMAL>)<CB>
+    <OB><STAMINA><SEP>stamina=<NUM><CB>
+    <OB><SPEED><SEP>speed=<NUM><CB>
+    <OB><HEAD_ANGLE><SEP>headAngle=<NUM><CB>
+    <OB><KICK><SEP>kick=<NUM><CB>
+    <OB><DASH><SEP>dash=<NUM><CB>
+    <OB><TURN><SEP>turn=<NUM><CB>
+    <OB><SAY><SEP>say=<NUM><CB>
+    <OB><TURN_NECK><SEP>turnNeck=<NUM><CB>{
+      int iViewModeQual=-1;
+      int iViewModeAngle=-1;
+      Double dStamina = new Double(stamina.image);
+      Double dSpeed = new Double(speed.image);
+      Double dHeadAngle = new Double(headAngle.image);
+      Integer iKick = new Integer(kick.image);
+      Integer iDash = new Integer(dash.image);
+      Integer iTurn = new Integer(turn.image);
+      Integer iSay = new Integer(say.image);
+      Integer iTurnNeck = new Integer(turnNeck.image);
+      switch(viewModeQual.image.charAt(0)){
+        case 'h': iViewModeQual=Controller.VIEW_QUALITY_HIGH; break;
+        case 'l': iViewModeQual=Controller.VIEW_QUALITY_LOW; break;
+      }
+      switch(viewModeAngle.image.charAt(1)){
+        case 'i': iViewModeAngle=Controller.VIEW_ANGLE_WIDE; break;
+        case 'a': iViewModeAngle=Controller.VIEW_ANGLE_NARROW; break;
+        case 'o': iViewModeAngle=Controller.VIEW_ANGLE_NORMAL; break;
+      }
+      controller.infoSenseBody(iViewModeQual, iViewModeAngle,
+        dStamina.doubleValue(), dSpeed.doubleValue(), dHeadAngle.doubleValue(),
+        iKick.intValue(), iDash.intValue(), iTurn.intValue(), iSay.intValue(),
+        iTurnNeck.intValue());
+    }
+  }
+*/
+
