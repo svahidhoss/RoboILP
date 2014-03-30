@@ -12,14 +12,9 @@
 
 package roboILP;
 
-import com.declarativa.interprolog.*;
-import com.xsb.interprolog.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.awt.geom.*;
-import java.awt.geom.Point2D.*;
 
 //***************************************************************************
 //
